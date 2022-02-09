@@ -12,6 +12,6 @@ public:
 	void ProcessWav(WaveFile& _wav, uint32 _start = 0, int _len = 0x7fffffff);
 
 protected:
-	virtual float GetSample(float input) = 0; // ´¿Ðéº¯Êý
+	virtual double GetSample(double input) = 0; // ´¿Ðéº¯Êý
 };
 

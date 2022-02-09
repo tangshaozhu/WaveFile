@@ -1,7 +1,5 @@
-*.user
-*.swp
-*.vcxproj
-*.filters
 /Debug/
 /Release/
-.gitignore
+*.user
+*.filters
+*.vcxproj

@@ -44,6 +44,9 @@
 #define FMT_TAG_MPEG                 80
 #define FMT_TAG_MP3                  85
 
+typedef double sample_t;
+typedef sample_t(*stereo_t)[2];
+typedef sample_t* mono_t;
 
 typedef float64(*stereo_f64_t)[2];
 typedef float64* mono_f64_t;
@@ -124,13 +127,13 @@ public:
 
 	size_t GetChannelLen(void) const
 	{
-		return dataSize / channels / sizeof(float32);
+		return dataSize / channels / sizeof(sample_t);
 	}
 
-	void ImportData(size_t size, const float32* pSrc);
-	void ImportData(size_t chSize, const float32* pSrcL, const float32* pSrcR);
-	void ExportData(size_t size, float32* pDst);
-	void ExportData(size_t chSize, float32* pDstL, float32* pDstR);
+	void ImportData(size_t size, const sample_t* pSrc);
+	void ImportData(size_t chSize, const sample_t* pSrcL, const sample_t* pSrcR);
+	void ExportData(size_t size, sample_t* pDst);
+	void ExportData(size_t chSize, sample_t* pDstL, sample_t* pDstR);
 
 	/* 接管WavHeaderStd方法 */
 	virtual void PrintInfo(WavHeaderStd& head);		// 打印文件头信息
@@ -142,8 +145,8 @@ protected:
 	uint16 datatype;
 	uint32 sampleRate;
 	uint16 channels;
-	uint32 dataSize;    // 真实数据大小，以float32类型数据计
-	float32 *pData;
+	uint32 dataSize;    // 真实数据大小，以sample_t类型数据计
+	sample_t *pData;
 	WORD GetFormatTag(WORD _datatype);
 	WORD GetSampleSize(WORD _datatype);
 	void WriteDataToFile(FILE* fpWrite, uint16 _datatype, DWORD start, int len);

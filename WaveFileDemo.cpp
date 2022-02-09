@@ -103,7 +103,7 @@ int CrossoverTest(int argc, char* argv[])
 {
 	WaveFile wav;		
 	wav.ReadFile(CO_TEST_FILE CO_TEST_EXT);
-	Crossover crs(10.f, 0.6f);
+	Crossover crs(10.0, 0.6);
 	crs.ProcessWav(wav);
 	wav.WriteFile(EM_AUTO, CO_TEST_FILE "_out.wav");
 	return 0;

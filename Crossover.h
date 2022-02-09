@@ -6,14 +6,14 @@ class Crossover :
 	public Disorter
 {
 public:
-	Crossover(float _a, float _th);
+	Crossover(double _a, double _th);
 	~Crossover();
 
 private:
-	virtual float GetSample(float input);	// 应该加上virtual使程序清晰
-	float a;
-	float th;
-	float theta;
-	float theta_b;
+	virtual double GetSample(double input);	// 应该加上virtual使程序清晰
+	double a;
+	double th;
+	double theta;
+	double theta_b;
 };
 

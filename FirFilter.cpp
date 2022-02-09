@@ -5,13 +5,13 @@
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
-FirFilter::FirFilter(const float32* coef, uint32 coeflen)
+FirFilter::FirFilter(const double* coef, uint32 coeflen)
 {
 	if (coef == nullptr || coeflen == 0) {
 		throw "Filter ctor failed";
 	}
 	len = coeflen * 2 - 1;
-	h = new float32[len];	// 滤波器长度
+	h = new double[len];	// 滤波器长度
 	flt = h + coeflen - 1;
 	for (int32 i = 0; i < (int32)coeflen; i++)
 	{
@@ -32,7 +32,7 @@ FirFilter::~FirFilter()
 // 滤波处理。滤波器从中心点开始计算
 void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 {
-	DWORD datalen = _wav.dataSize / sizeof(float32);
+	DWORD datalen = _wav.dataSize / sizeof(sample_t);
 
 	if (_wav.pData == nullptr || datalen <= _start *  _wav.channels || _len == 0) {
 		printf("wav object No data!\n");
@@ -41,8 +41,8 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 	DWORD leftlen = datalen - _start * _wav.channels;
 	DWORD lentotal = ((DWORD)_len) * _wav.channels;// 待处理采样总个数
 	lentotal = lentotal < leftlen ? lentotal : leftlen; 
-	float32* pDataOffset = _wav.pData + _start * _wav.channels;	// 数据源地址
-	float32* pProc = new float32[lentotal]();	// 初始化0
+	sample_t* pDataOffset = _wav.pData + _start * _wav.channels;	// 数据源地址
+	sample_t* pProc = new sample_t[lentotal]();	// 初始化0
 
 	int start, end;
 	int i,j;
@@ -56,8 +56,8 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 		}
 	}
 	else {
-		stereo_f32_t pDualData = (stereo_f32_t)pDataOffset;
-		stereo_f32_t pDualProc = (stereo_f32_t)pProc;
+		stereo_t pDualData = (stereo_t)pDataOffset;
+		stereo_t pDualProc = (stereo_t)pProc;
 		int singlelen = lentotal / 2;
 		for (i = 0; i < singlelen; ++i) {
 			start = -min(len / 2, i);
@@ -69,7 +69,7 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 		}
 	}
 
-	memcpy_s(pDataOffset, lentotal * sizeof(float32), pProc, lentotal * sizeof(float32));
+	memcpy_s(pDataOffset, lentotal * sizeof(sample_t), pProc, lentotal * sizeof(sample_t));
 	delete[] pProc;
 	pProc = nullptr;
 

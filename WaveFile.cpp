@@ -24,7 +24,7 @@
 #endif
 
 #define PRINT_TAG(dw)	printf("TAG: [%c%c%c%c]\n", ((char*)&dw)[0], ((char*)&dw)[1], ((char*)&dw)[2], ((char*)&dw)[3])
-#define TRUNCATE(a)		do {if ((a) < -1.f){ a = -1.f; } else if ((a) > 1.f) { a = 1.f; } } while(0)
+#define TRUNCATE(a)		do {if ((a) < -1.0){ a = -1.0; } else if ((a) > 1.0) { a = 1.0; } } while(0)
 
 WaveFile::~WaveFile()
 {
@@ -90,7 +90,7 @@ WaveFile::WaveFile(const WaveFile& that)
 		pData = nullptr;
 	}
 	else {
-		pData = new float32[dataSize / sizeof(float32)];
+		pData = new sample_t[dataSize / sizeof(sample_t)];
 		memcpy_s(pData, dataSize, that.pData, dataSize);
 	}
 }
@@ -195,7 +195,7 @@ uint32 WaveFile::ReadFile(const char* path)
 			case EM_INT16:
 			{
 				size_t sampleNum = fileDataSize / EM_INT16;
-				newDataSize = sampleNum * sizeof(float32);
+				newDataSize = sampleNum * sizeof(sample_t);
 				int16* pFileData = new int16[sampleNum];
 				fread(pFileData, EM_INT16, sampleNum, fp);
 
@@ -203,15 +203,15 @@ uint32 WaveFile::ReadFile(const char* path)
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
 					if (dataSize < newDataSize) {
 						delete[] pData;
-						pData = new float32[sampleNum];
+						pData = new sample_t[sampleNum];
 					}
 				} else {
-					pData = new float32[sampleNum];
+					pData = new sample_t[sampleNum];
 				}
 				dataSize = newDataSize;
 
 				for (DWORD i = 0; i < sampleNum; ++i) {
-					pData[i] = ((float32)(pFileData[i])) / (float32)0x7fff;
+					pData[i] = ((sample_t)(pFileData[i])) / (sample_t)0x7fff;
 				}
 				delete[] pFileData;
 				break;
@@ -219,7 +219,7 @@ uint32 WaveFile::ReadFile(const char* path)
 			case EM_INT32:
 			{
 				size_t sampleNum = fileDataSize / EM_INT32;
-				newDataSize = sampleNum * sizeof(float32);
+				newDataSize = sampleNum * sizeof(sample_t);
 				int32* pFileData = new int32[sampleNum];
 				fread(pFileData, EM_INT32, sampleNum, fp);
 
@@ -228,16 +228,16 @@ uint32 WaveFile::ReadFile(const char* path)
 					if (dataSize < fileDataSize) {
 						delete[] pData;
 						pData = nullptr;	// forget
-						pData = new float32[sampleNum];
+						pData = new sample_t[sampleNum];
 					} 
 				}
 				else {
-					pData = new float32[sampleNum];
+					pData = new sample_t[sampleNum];
 				}
 				dataSize = fileDataSize;
 
 				for (DWORD i = 0; i < sampleNum; ++i) {
-					pData[i] = (float32)(pFileData[i]) / (float32)0x7fffffff;
+					pData[i] = (sample_t)(pFileData[i]) / (sample_t)0x7fffffff;
 				}
 				delete[] pFileData;
 				break;
@@ -245,7 +245,7 @@ uint32 WaveFile::ReadFile(const char* path)
 			case EM_INT24:
 			{
 				size_t sampleNum = fileDataSize / EM_INT24;
-				newDataSize = sampleNum * sizeof(float32);
+				newDataSize = sampleNum * sizeof(sample_t);
 				BYTE* pFileData = new BYTE[fileDataSize];
 				fread(pFileData, 1, fileDataSize, fp);
 
@@ -253,11 +253,11 @@ uint32 WaveFile::ReadFile(const char* path)
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
 					if (dataSize < newDataSize) {
 						delete[] pData;
-						pData = new float32[sampleNum];
+						pData = new sample_t[sampleNum];
 					}
 				}
 				else {
-					pData = new float32[sampleNum];
+					pData = new sample_t[sampleNum];
 				}
 				dataSize = newDataSize;
 
@@ -266,30 +266,35 @@ uint32 WaveFile::ReadFile(const char* path)
 					((BYTE*)(&itemp))[1] = pFileData[i + 0];
 					((BYTE*)(&itemp))[2] = pFileData[i + 1];
 					((BYTE*)(&itemp))[3] = pFileData[i + 2];
-					pData[si] = (float32)(itemp) / (float32)0x7fffffff;
+					pData[si] = (sample_t)(itemp) / (sample_t)0x7fffffff;
 				}
 				delete[] pFileData;
 				break;
 			}
 			case EM_FLOAT:
 			{
-				size_t sampleNum = fileDataSize / sizeof(float32);
-				newDataSize = fileDataSize;
+				size_t sampleNum = fileDataSize / EM_INT32;
+				newDataSize = sampleNum * sizeof(sample_t);
+				float32* pFileData = new float32[sampleNum];
+				fread(pFileData, EM_INT32, sampleNum, fp);
+
 				if (pData != nullptr) {
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
 					if (dataSize < fileDataSize) {
 						delete[] pData;
 						pData = nullptr;	// forget
-						pData = new float32[sampleNum];
+						pData = new sample_t[sampleNum];
 					}
 				}
 				else {
-					pData = new float32[sampleNum];
+					pData = new sample_t[sampleNum];
 				}
 				dataSize = fileDataSize;
 
-				fread(pData, sizeof(float32), sampleNum, fp);
-				
+				for (DWORD i = 0; i < sampleNum; ++i) {
+					pData[i] = (sample_t)(pFileData[i]);
+				}
+				delete[] pFileData;
 				break;
 			}
 			default:
@@ -320,7 +325,7 @@ CLOSE_FILE:
 uint32 WaveFile::WriteFile(WORD _datatype, const char* path, DWORD start, int len)
 {
 	// 计算数据大小
-	DWORD datalen = dataSize / sizeof(float32);
+	DWORD datalen = dataSize / sizeof(sample_t);
 
 	if (pData == nullptr || datalen <= start * channels || len <= 0) {
 		printf("WaveFile::WriteFile() >>>> No data to write!\n");
@@ -433,7 +438,7 @@ WORD WaveFile::GetSampleSize(WORD _datatype)
 
 void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int len)
 {
-	DWORD datalen = dataSize / sizeof(float32);
+	DWORD datalen = dataSize / sizeof(sample_t);
 
 	if (pData == nullptr || datalen <= start * channels || len <= 0) {
 		printf("No data to write!\n");
@@ -442,7 +447,7 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 	DWORD leftlen = datalen - start * channels;
 	DWORD lentotal = ((DWORD)len) * channels;
 	lentotal = lentotal < leftlen ? lentotal : leftlen;
-	float32* pDataOffset = pData + start * channels;
+	sample_t* pDataOffset = pData + start * channels;
 
 	switch (_datatype)
 	{
@@ -452,8 +457,8 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 
 		for (DWORD i = 0; i < lentotal; ++i) {
 			TRUNCATE(pDataOffset[i]);
-			pDataWrite[i] = (int8)(pDataOffset[i] * (float32)0x7f);
-			pDataWrite[i] ^= 0x80;
+			pDataWrite[i] = (int8)(pDataOffset[i] * (sample_t)0x7f);
+			pDataWrite[i] ^= 0x80;	// to unsigned char
 		}
 		fwrite(pDataWrite, EM_UINT8, lentotal, fpWrite);
 		delete[] pDataWrite;
@@ -465,7 +470,7 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 
 		for (DWORD bi = 0, si = 0; si < lentotal; si += 1, bi += 3) {
 			TRUNCATE(pDataOffset[si]);
-			int32 itemp = (int32)(pDataOffset[si] * (float32)0x7fffffff);
+			int32 itemp = (int32)(pDataOffset[si] * (sample_t)0x7fffffff);
 			pDataWrite[bi + 0] = ((BYTE*)(&itemp))[1];
 			pDataWrite[bi + 1] = ((BYTE*)(&itemp))[2];
 			pDataWrite[bi + 2] = ((BYTE*)(&itemp))[3];
@@ -478,7 +483,7 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 	{
 		int32* pDataWrite = new int32[lentotal];
 		for (DWORD i = 0; i < lentotal; ++i) {
-			pDataWrite[i] = (int32)(pDataOffset[i] * (float32)0x7fffffff);
+			pDataWrite[i] = (int32)(pDataOffset[i] * (sample_t)0x7fffffff);
 
 		}
 		fwrite(pDataWrite, EM_INT32, lentotal, fpWrite);
@@ -486,15 +491,23 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 		break;
 	}
 	case EM_FLOAT:
-		fwrite(pDataOffset, sizeof(float32), lentotal, fpWrite);
+	{
+		float32* pDataWrite = new float32[lentotal];
+		for (DWORD i = 0; i < lentotal; ++i) {
+			pDataWrite[i] = (float32)(pDataOffset[i]);
+
+		}
+		fwrite(pDataWrite, EM_INT32, lentotal, fpWrite);
+		delete[] pDataWrite;
 		break;
+	}
 	case EM_INT16:
 	{
 		int16* pDataWrite = new int16[lentotal];
 
 		for (DWORD i = 0; i < lentotal; ++i) {
 			TRUNCATE(pDataOffset[i]);
-			pDataWrite[i] = (int16)(pDataOffset[i] * (float32)0x7fff);
+			pDataWrite[i] = (int16)(pDataOffset[i] * (sample_t)0x7fff);
 
 		}
 		fwrite(pDataWrite, EM_INT16, lentotal, fpWrite);
@@ -507,16 +520,3 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 		break;
 	}
 }
-
-//#define IND1	(0)
-//#define IND2    (-1)
-//
-//void WaveFile::FixWeiweiVocal()
-//{
-//	DWORD datalen = dataSize / sizeof(float32);
-//
-//	for (DWORD i = 2; i < datalen - 2; i += 2) {
-//		pData[i + IND1] -= 0.333333f * pData[i + IND2];
-//		pData[i + IND2] *= 0.666666f;
-//	}
-//}

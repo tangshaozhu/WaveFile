@@ -26,10 +26,10 @@
  *   single-precision filter coefficients.
  */
 
-const float numerator_sec1[3] = { 1, -2, 1 };	// b
-const float denominator_sec1[3] = { 1, -1.993405819, 0.9934786558 }; // a
-const float gain_sec1 = 0.9967210889f;
+const double numerator_sec1[3] = { 1, -2, 1 };	// b
+const double denominator_sec1[3] = { 1, -1.993405819, 0.9934786558 }; // a
+const double gain_sec1 = 0.9967210889;
 
-const float numerator_sec2[3] = { 1, -2, 1 }; // b
-const float denominator_sec2[3] = { 1, -1.984255791, 0.9843283296 }; // a
-const float gain_sec2 = 0.9921460152;
+const double numerator_sec2[3] = { 1, -2, 1 }; // b
+const double denominator_sec2[3] = { 1, -1.984255791, 0.9843283296 }; // a
+const double gain_sec2 = 0.9921460152;
