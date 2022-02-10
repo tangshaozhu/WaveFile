@@ -36,7 +36,7 @@ double Crossover::GetSample(double input)
 {
 	double ret;
 	uint64 sign = *((uint64*)(&input)) & 0x8000000000000000ULL;
-	float absinput = abs(input);
+	double absinput = abs(input);
 	if (absinput < theta) {
 		ret = (exp(absinput * a) - 1) / (exp(th * a) - 1);
 		*((uint64*)(&ret)) |= sign;

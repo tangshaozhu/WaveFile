@@ -26,27 +26,27 @@ int FormatTest(int argc, char* argv[])
 		wav.ReadFile(argv[i]);
 		// float
 		sprintf_s(TestPath, TEST_FILE_PATH "float" "(%d).wav", i);
-		if (WF_FAILURE == wav.WriteFile(EM_FLOAT, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_FLOAT, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 		// int16
 		sprintf_s(TestPath, TEST_FILE_PATH "int16" "(%d).wav", i);
-		if (WF_FAILURE == wav.WriteFile(EM_INT16, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_INT16, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 		// int24
 		sprintf_s(TestPath, TEST_FILE_PATH "int24" "(%d).wav", i);
-		if (WF_FAILURE == wav.WriteFile(EM_INT24, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_INT24, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 		// int32
 		sprintf_s(TestPath, TEST_FILE_PATH "int32" "(%d).wav", i);
-		if (WF_FAILURE == wav.WriteFile(EM_INT32, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_INT32, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 		// uint8
 		sprintf_s(TestPath, TEST_FILE_PATH "uint8" "(%d).wav", i);
-		if (WF_FAILURE == wav.WriteFile(EM_UINT8, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_UINT8, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 	}
@@ -80,7 +80,7 @@ int TrimTest(int argc, char* argv[])
 		}
 		sprintf(TestPath + len - 4, "_trim[%gs].wav", sec);
 		DWORD sr = wav.GetSampleRate();
-		if (WF_FAILURE == wav.WriteFile(EM_AUTO, TestPath, (int)((float)sr * sec))) {
+		if (WF_FAILURE == wav.WriteFile(DT_AUTO, TestPath, (int)((float)sr * sec))) {
 			printf("Write file failed! [%s]\n", TestPath);
 		}
 	}
@@ -105,7 +105,7 @@ int CrossoverTest(int argc, char* argv[])
 	wav.ReadFile(CO_TEST_FILE CO_TEST_EXT);
 	Crossover crs(10.0, 0.6);
 	crs.ProcessWav(wav);
-	wav.WriteFile(EM_AUTO, CO_TEST_FILE "_out.wav");
+	wav.WriteFile(DT_AUTO, CO_TEST_FILE "_out.wav");
 	return 0;
 }
 //int _tmain(int argc, _TCHAR* argv[])
@@ -118,7 +118,7 @@ int FilterTest(int argc, char* argv[])
 	
 	FirFilter ft(B + 250, 251);
 	ft.ProcessWav(wav);
-	wav.WriteFile(EM_AUTO, CO_TEST_FILE "_out.wav");
+	wav.WriteFile(DT_AUTO, CO_TEST_FILE "_out.wav");
 	return 0;
 }
 
@@ -143,7 +143,7 @@ int IIRTest(int argc, char* argv[])
 
 	IirFilter iir(sec1, sec2);
 	iir.ProcessWav(wav);
-	wav.WriteFile(EM_AUTO, CO_TEST_FILE "_out.wav");
+	wav.WriteFile(DT_AUTO, CO_TEST_FILE "_out.wav");
 	return 0;
 }
 
@@ -181,12 +181,40 @@ int OneKeyLowCut(int argc, char* argv[])
 			continue;
 		}
 		sprintf(TestPath + len - 4, "_lowcut.wav");
-		DWORD sr = wav.GetSampleRate();
 
 		iir.ProcessWav(wav);
 
-		if (WF_FAILURE == wav.WriteFile(EM_AUTO, TestPath)) {
+		if (WF_FAILURE == wav.WriteFile(DT_AUTO, TestPath)) {
 			printf("Write file failed! [%s]\n", TestPath);
+		}
+	}
+	return 0;
+}
+
+int ConvertChannels(int argc, char* argv[])
+{
+	for (int i = 1; i < argc; ++i) {
+		WaveFile wav;
+		wav.ReadFile(argv[i]);
+		// float
+		strcpy_s(TestPath, MAX_PATH, argv[i]);
+		size_t len = strlen(TestPath);
+		if (len < 4) {
+			printf("Invalid path: %s\n", TestPath);
+			continue;
+		}
+		if (strcmp(TestPath + len - 4, ".wav") != 0) {
+			printf("Invalid extension: %s\n", TestPath);
+			continue;
+		}
+
+		if (wav.GetChannels() == 2) {
+			sprintf(TestPath + len - 4, "_L.wav");
+			WaveFile wavL(wav, CHANNEL_MONO_L);
+			wavL.WriteFile(DT_AUTO, TestPath);
+			sprintf(TestPath + len - 4, "_R.wav");
+			WaveFile wavR(wav, CHANNEL_MONO_R);
+			wavR.WriteFile(DT_AUTO, TestPath);
 		}
 	}
 	return 0;
@@ -194,5 +222,5 @@ int OneKeyLowCut(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	return OneKeyLowCut(argc, argv);
+	return ConvertChannels(argc, argv);
 }

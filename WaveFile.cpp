@@ -61,14 +61,14 @@ WaveFile::WaveFile(uint16 _channels, uint32 _sampleRate, WORD _dataType)
 	}
 	switch (_dataType)
 	{
-	case EM_UINT8:
-	case EM_INT16:
-	case EM_INT24:
-	case EM_INT32:
-	case EM_FLOAT:
+	case DT_UINT8:
+	case DT_INT16:
+	case DT_INT24:
+	case DT_INT32:
+	case DT_FLOAT:
 		datatype = _dataType;
 	default:
-		datatype = EM_INT16;	// int16 for default
+		datatype = DT_INT16;	// int16 for default
 		break;
 	}
 	sampleRate = _sampleRate;
@@ -93,6 +93,52 @@ WaveFile::WaveFile(const WaveFile& that)
 		pData = new sample_t[dataSize / sizeof(sample_t)];
 		memcpy_s(pData, dataSize, that.pData, dataSize);
 	}
+}
+
+
+WaveFile::WaveFile(const WaveFile& that, uint16 channelSel)
+{
+	channels = channelSel == CHANNEL_STEREO ? 2 : 1;
+	sampleRate = that.sampleRate;
+	datatype = that.datatype;
+
+	if (that.pData == nullptr) {
+		pData = nullptr;
+	}
+
+	if (channels == that.channels) {
+		dataSize = that.dataSize;
+
+		pData = new sample_t[dataSize / sizeof(sample_t)];
+		memcpy_s(pData, dataSize, that.pData, dataSize);		
+	}
+	else if (that.channels == 1) {	// that: mono, this: stereo
+		dataSize = that.dataSize * channels; // channels must be 2
+
+		uint32 lentotal = dataSize / sizeof(sample_t);
+		pData = new sample_t[lentotal];
+		stereo_t streamDst = (stereo_t)pData;
+		for (uint32 i = 0; i < lentotal / 2; i++)
+		{
+			streamDst[i][0] = streamDst[i][1] = that.pData[i];
+		}			
+		
+	}
+	else { // that: stereo, this: mono
+		dataSize = that.dataSize / 2; // channels must be 2
+
+		uint32 lentotal = dataSize / sizeof(sample_t);
+		pData = new sample_t[lentotal];
+		stereo_t streamSrc = (stereo_t)that.pData;
+		
+		const uint16 sel = 1 - (channelSel & 1);	// channelSel 最低位1，取左声道0，否则1
+		for (uint32 i = 0; i < lentotal; i++)
+		{
+			pData[i] = streamSrc[i][sel];
+		}
+		
+	}
+
 }
 
 /**************************************************************************************************
@@ -176,7 +222,7 @@ uint32 WaveFile::ReadFile(const char* path)
 			sampleRate = head.stFormatChunk.dwSamplesPerSec;
 			channels = head.stFormatChunk.wChannels;
 			if (head.stFormatChunk.wFormatTag == FMT_TAG_IEEE754_FLOAT) {
-				datatype = EM_FLOAT;
+				datatype = DT_FLOAT;
 			}
 			else {
 				datatype = head.stFormatChunk.usBitsPerSample / 8;
@@ -192,12 +238,12 @@ uint32 WaveFile::ReadFile(const char* path)
 
 			switch (datatype)
 			{
-			case EM_INT16:
+			case DT_INT16:
 			{
-				size_t sampleNum = fileDataSize / EM_INT16;
+				size_t sampleNum = fileDataSize / DT_INT16;
 				newDataSize = sampleNum * sizeof(sample_t);
 				int16* pFileData = new int16[sampleNum];
-				fread(pFileData, EM_INT16, sampleNum, fp);
+				fread(pFileData, DT_INT16, sampleNum, fp);
 
 				if (pData != nullptr) {
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
@@ -216,12 +262,12 @@ uint32 WaveFile::ReadFile(const char* path)
 				delete[] pFileData;
 				break;
 			}
-			case EM_INT32:
+			case DT_INT32:
 			{
-				size_t sampleNum = fileDataSize / EM_INT32;
+				size_t sampleNum = fileDataSize / DT_INT32;
 				newDataSize = sampleNum * sizeof(sample_t);
 				int32* pFileData = new int32[sampleNum];
-				fread(pFileData, EM_INT32, sampleNum, fp);
+				fread(pFileData, DT_INT32, sampleNum, fp);
 
 				if (pData != nullptr) {
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
@@ -242,9 +288,9 @@ uint32 WaveFile::ReadFile(const char* path)
 				delete[] pFileData;
 				break;
 			}
-			case EM_INT24:
+			case DT_INT24:
 			{
-				size_t sampleNum = fileDataSize / EM_INT24;
+				size_t sampleNum = fileDataSize / DT_INT24;
 				newDataSize = sampleNum * sizeof(sample_t);
 				BYTE* pFileData = new BYTE[fileDataSize];
 				fread(pFileData, 1, fileDataSize, fp);
@@ -261,7 +307,7 @@ uint32 WaveFile::ReadFile(const char* path)
 				}
 				dataSize = newDataSize;
 
-				for (DWORD i = 0, si = 0; si < sampleNum; i += EM_INT24, ++si) {
+				for (DWORD i = 0, si = 0; si < sampleNum; i += DT_INT24, ++si) {
 					int32 itemp = 0;
 					((BYTE*)(&itemp))[1] = pFileData[i + 0];
 					((BYTE*)(&itemp))[2] = pFileData[i + 1];
@@ -271,12 +317,12 @@ uint32 WaveFile::ReadFile(const char* path)
 				delete[] pFileData;
 				break;
 			}
-			case EM_FLOAT:
+			case DT_FLOAT:
 			{
-				size_t sampleNum = fileDataSize / EM_INT32;
+				size_t sampleNum = fileDataSize / DT_INT32;
 				newDataSize = sampleNum * sizeof(sample_t);
 				float32* pFileData = new float32[sampleNum];
-				fread(pFileData, EM_INT32, sampleNum, fp);
+				fread(pFileData, DT_INT32, sampleNum, fp);
 
 				if (pData != nullptr) {
 					// 如果dataSize不够存新文件数据，需要重新申请内存。如果足够则不需要。
@@ -299,7 +345,7 @@ uint32 WaveFile::ReadFile(const char* path)
 			}
 			default:
 				printf("WaveFile error data type! %u\n", datatype);
-				datatype = EM_INT16;
+				datatype = DT_INT16;
 				ret = WF_FAILURE;
 				goto CLOSE_FILE;
 				break;
@@ -402,17 +448,17 @@ WORD WaveFile::GetFormatTag(WORD _datatype)
 {
 	switch (_datatype)
 	{
-	case EM_UINT8:
-	case EM_INT16:
-	case EM_INT24:
-	case EM_INT32:
+	case DT_UINT8:
+	case DT_INT16:
+	case DT_INT24:
+	case DT_INT32:
 		return FMT_TAG_MICROSOFT_PCM;
-	case EM_FLOAT:
+	case DT_FLOAT:
 		return FMT_TAG_IEEE754_FLOAT;
 		break;
-	case EM_AUTO:
+	case DT_AUTO:
 	default:
-		return GetFormatTag(datatype);	// 如果外部数据是EM_AUTO或不可信数据，使用内部可信数据 datatype
+		return GetFormatTag(datatype);	// 如果外部数据是DT_AUTO或不可信数据，使用内部可信数据 datatype
 		break;
 	}
 }
@@ -422,16 +468,16 @@ WORD WaveFile::GetSampleSize(WORD _datatype)
 {
 	switch (_datatype)
 	{
-	case EM_UINT8:
-	case EM_INT16:
-	case EM_INT24:
-	case EM_INT32:
+	case DT_UINT8:
+	case DT_INT16:
+	case DT_INT24:
+	case DT_INT32:
 		return _datatype;
-	case EM_FLOAT:
+	case DT_FLOAT:
 		return sizeof(float32);
-	case EM_AUTO:
+	case DT_AUTO:
 	default:
-		return GetSampleSize(datatype);	// 如果外部数据是EM_AUTO或不可信数据，使用内部可信数据 datatype
+		return GetSampleSize(datatype);	// 如果外部数据是DT_AUTO或不可信数据，使用内部可信数据 datatype
 	}
 }
 
@@ -451,7 +497,7 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 
 	switch (_datatype)
 	{
-	case EM_UINT8:
+	case DT_UINT8:
 	{
 		uint8* pDataWrite = new uint8[lentotal];
 
@@ -460,13 +506,13 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 			pDataWrite[i] = (int8)(pDataOffset[i] * (sample_t)0x7f);
 			pDataWrite[i] ^= 0x80;	// to unsigned char
 		}
-		fwrite(pDataWrite, EM_UINT8, lentotal, fpWrite);
+		fwrite(pDataWrite, DT_UINT8, lentotal, fpWrite);
 		delete[] pDataWrite;
 		break;
 	}
-	case EM_INT24:
+	case DT_INT24:
 	{
-		BYTE* pDataWrite = new BYTE[lentotal * EM_INT24];
+		BYTE* pDataWrite = new BYTE[lentotal * DT_INT24];
 
 		for (DWORD bi = 0, si = 0; si < lentotal; si += 1, bi += 3) {
 			TRUNCATE(pDataOffset[si]);
@@ -475,33 +521,33 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 			pDataWrite[bi + 1] = ((BYTE*)(&itemp))[2];
 			pDataWrite[bi + 2] = ((BYTE*)(&itemp))[3];
 		}
-		fwrite(pDataWrite, EM_INT24, lentotal, fpWrite);
+		fwrite(pDataWrite, DT_INT24, lentotal, fpWrite);
 		delete[] pDataWrite;
 		break;
 	}
-	case EM_INT32:
+	case DT_INT32:
 	{
 		int32* pDataWrite = new int32[lentotal];
 		for (DWORD i = 0; i < lentotal; ++i) {
 			pDataWrite[i] = (int32)(pDataOffset[i] * (sample_t)0x7fffffff);
 
 		}
-		fwrite(pDataWrite, EM_INT32, lentotal, fpWrite);
+		fwrite(pDataWrite, DT_INT32, lentotal, fpWrite);
 		delete[] pDataWrite;
 		break;
 	}
-	case EM_FLOAT:
+	case DT_FLOAT:
 	{
 		float32* pDataWrite = new float32[lentotal];
 		for (DWORD i = 0; i < lentotal; ++i) {
 			pDataWrite[i] = (float32)(pDataOffset[i]);
 
 		}
-		fwrite(pDataWrite, EM_INT32, lentotal, fpWrite);
+		fwrite(pDataWrite, DT_INT32, lentotal, fpWrite);
 		delete[] pDataWrite;
 		break;
 	}
-	case EM_INT16:
+	case DT_INT16:
 	{
 		int16* pDataWrite = new int16[lentotal];
 
@@ -510,13 +556,15 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 			pDataWrite[i] = (int16)(pDataOffset[i] * (sample_t)0x7fff);
 
 		}
-		fwrite(pDataWrite, EM_INT16, lentotal, fpWrite);
+		fwrite(pDataWrite, DT_INT16, lentotal, fpWrite);
 		delete[] pDataWrite;
 		break;
 	}
-	case EM_AUTO:
+	case DT_AUTO:
 	default:
-		WriteDataToFile(fpWrite, datatype, start, len);	// 如果外部数据是EM_AUTO或不可信数据，使用内部可信数据 datatype
+		WriteDataToFile(fpWrite, datatype, start, len);	// 如果外部数据是DT_AUTO或不可信数据，使用内部可信数据 datatype
 		break;
 	}
 }
+
+

@@ -48,7 +48,7 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 	int i,j;
 	if (_wav.GetChannels() == 1) {
 		for (i = 0; i < lentotal; ++i) {
-			start = - min(len / 2, i);
+			start = -(int)min(len / 2, i);
 			end = min(lentotal - i - 1, len / 2);
 			for (j = start; j <= end; ++j){ // 系数的下标
 				pProc[i] += fderef(j) * pDataOffset[i + j];
@@ -60,7 +60,7 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 		stereo_t pDualProc = (stereo_t)pProc;
 		int singlelen = lentotal / 2;
 		for (i = 0; i < singlelen; ++i) {
-			start = -min(len / 2, i);
+			start = -(int)min(len / 2, i);
 			end = min(singlelen - i - 1, len / 2);
 			for (j = start; j <= end; ++j){ // 系数的下标
 				pDualProc[i][0] += fderef(j) * pDualData[i + j][0];

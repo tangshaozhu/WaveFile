@@ -94,12 +94,16 @@ struct WavHeaderStd
 
 
 
-#define EM_UINT8 1
-#define	EM_INT16 2
-#define	EM_INT24 3
-#define	EM_INT32 4
-#define	EM_FLOAT 7
-#define	EM_AUTO  8
+#define DT_UINT8 1
+#define	DT_INT16 2
+#define	DT_INT24 3
+#define	DT_INT32 4
+#define	DT_FLOAT 7
+#define	DT_AUTO  8
+
+#define CHANNEL_MONO_L 1
+#define CHANNEL_MONO_R 2
+#define CHANNEL_STEREO 3
 
 class WaveFile
 {
@@ -107,9 +111,10 @@ public:
 	friend class FirFilter;
 	friend class IirFilter;
 	friend class Disorter;
-	// WaveFile();                      // 默认构造
-	WaveFile(const WaveFile& that);     // 拷贝构造
-	WaveFile(uint16 _channels = 2, uint32 _sampleRate = 44100, WORD dataType = EM_INT16);    // 构造函数，新建
+	// WaveFile();											// 默认构造
+	WaveFile(const WaveFile& that);							// 拷贝构造
+	WaveFile(const WaveFile& that, uint16 channelSel);		// 拷贝构造
+	WaveFile(uint16 _channels = 2, uint32 _sampleRate = 44100, WORD dataType = DT_INT16);    // 构造函数，新建
 	~WaveFile();
 	
 	uint32 ReadFile(const char* path);	/* 读取文件 */
@@ -150,6 +155,5 @@ protected:
 	WORD GetFormatTag(WORD _datatype);
 	WORD GetSampleSize(WORD _datatype);
 	void WriteDataToFile(FILE* fpWrite, uint16 _datatype, DWORD start, int len);
-
 };
 
