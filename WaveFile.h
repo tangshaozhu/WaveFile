@@ -119,7 +119,7 @@ public:
 	
 	uint32 ReadFile(const char* path);	/* ¶ÁÈ¡ÎÄ¼þ */
 
-	void Resize(uint32 size);
+	void Resize(size_t new_channel_len);
 	uint32 WriteFile(WORD _datatype, const char* path, DWORD start = 0, int len = 0x7fffffff);
 
 
@@ -128,6 +128,8 @@ public:
 	uint16 GetChannels() const { return channels; }
 	uint32 GetSampleRate(void) const { return sampleRate; }
 	uint32 GetFormat() const;
+	int32 GetStdSample(size_t offset) const;
+	size_t GetLastNonZero() const;
 
 
 	size_t GetChannelLen(void) const

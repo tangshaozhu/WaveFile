@@ -14,6 +14,7 @@
 *
 *
 *************************************************************************************************/
+#include <cmath>
 #include "stdafx.h"
 #include "WaveFile.h"
 
@@ -482,6 +483,40 @@ WORD WaveFile::GetSampleSize(WORD _datatype)
 }
 
 
+int32 WaveFile::GetStdSample(size_t offset) const
+{
+	if (offset >= dataSize / sizeof(sample_t))
+	{
+		return -1;
+	}
+	return (int32)(pData[offset] * (sample_t)0x7fffffff);
+}
+
+size_t WaveFile::GetLastNonZero() const
+{
+	size_t n;
+	for (n = GetChannelLen(); n > 0; --n)
+	{
+		size_t real_offset = n * channels - 1;
+		TRUNCATE(pData[real_offset]);
+		int32 temp = (int32)(pData[real_offset] * (sample_t)0x7fffffff);
+		// 24 bit¾«¶È
+		if (abs(temp) > 256) {
+			return n;
+		}
+	}
+	return 0;
+}
+
+void WaveFile::Resize(size_t new_channel_len)
+{
+	size_t channel_len = GetChannelLen();
+	if (new_channel_len >= channel_len) {
+		return;
+	}
+	dataSize = new_channel_len * channels * sizeof(sample_t);
+}
+
 void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int len)
 {
 	DWORD datalen = dataSize / sizeof(sample_t);
@@ -529,6 +564,7 @@ void WaveFile::WriteDataToFile(FILE* fpWrite, WORD _datatype, DWORD start, int l
 	{
 		int32* pDataWrite = new int32[lentotal];
 		for (DWORD i = 0; i < lentotal; ++i) {
+			TRUNCATE(pDataOffset[i]);
 			pDataWrite[i] = (int32)(pDataOffset[i] * (sample_t)0x7fffffff);
 
 		}

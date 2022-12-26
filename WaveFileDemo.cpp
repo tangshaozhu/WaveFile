@@ -91,6 +91,33 @@ int TrimTest(int argc, char* argv[])
 	return 0;
 }
 
+int WavClear(int argc, char* argv[])
+{
+	int i;
+
+	for (i = 1; i < argc; ++i) {
+		WaveFile wav;
+		wav.ReadFile(argv[i]);
+		// float
+		strcpy_s(TestPath, MAX_PATH, argv[i]);
+		size_t len = strlen(TestPath);
+		if (len < 4) {
+			printf("Invalid path: %s\n", TestPath);
+			continue;
+		}
+
+		if (WF_FAILURE == wav.WriteFile(DT_AUTO, argv[i])) {
+			printf("Write file failed! [%s]\n", argv[i]);
+		}
+	}
+#ifdef _DEBUG
+	printf("输入任意键继续\n");
+	getchar();
+#endif
+	return 0;
+}
+
+
 #if 1
 #define CO_TEST_FILE "E:/Audio/Temp/sweep"
 #else
@@ -197,7 +224,7 @@ int ConvertChannels(int argc, char* argv[])
 		WaveFile wav;
 		wav.ReadFile(argv[i]);
 		// float
-		strcpy_s(TestPath, MAX_PATH, argv[i]);
+ 		strcpy_s(TestPath, MAX_PATH, argv[i]);
 		size_t len = strlen(TestPath);
 		if (len < 4) {
 			printf("Invalid path: %s\n", TestPath);
@@ -220,7 +247,33 @@ int ConvertChannels(int argc, char* argv[])
 	return 0;
 }
 
+int ConvertAndTrim(int argc, char* argv[])
+{
+	char* outfile = nullptr;
+	if (argc == 2) {
+		outfile = argv[1];
+	} else if (argc > 2) {
+		outfile = argv[2];
+	}
+
+	WaveFile* pWav = new WaveFile();
+	pWav->ReadFile(argv[1]);
+
+	if (pWav->GetChannels() == 2) {
+		WaveFile* pWavTemp = new WaveFile(*pWav, CHANNEL_MONO_L);
+		delete pWav;
+		pWav =  pWavTemp;
+	}
+	size_t datalen = pWav->GetLastNonZero();
+	printf("%d / %d\n", datalen, pWav->GetChannelLen());
+	pWav->Resize(datalen);
+	pWav->WriteFile(DT_AUTO, outfile);
+	delete pWav;
+	pWav = nullptr;
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
-	return ConvertChannels(argc, argv);
+	return ConvertAndTrim(argc, argv);
 }
