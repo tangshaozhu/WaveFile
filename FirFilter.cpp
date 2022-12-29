@@ -45,7 +45,7 @@ void FirFilter::ProcessWav(WaveFile& _wav, uint32 _start, int _len)
 	sample_t* pProc = new sample_t[lentotal]();	// ≥ı ºªØ0
 
 	int start, end;
-	int i,j;
+	int i, j;
 	if (_wav.GetChannels() == 1) {
 		for (i = 0; i < lentotal; ++i) {
 			start = -(int)min(len / 2, i);

@@ -139,8 +139,29 @@ WaveFile::WaveFile(const WaveFile& that, uint16 channelSel)
 		}
 		
 	}
-
 }
+
+void WaveFile::ImportData(size_t len, const sample_t* pSrc)
+{
+	if (pData != nullptr)
+	{
+		delete[] pData;
+	}
+	pData = new sample_t[len * channels];
+	dataSize = len * channels * sizeof(sample_t);
+	if (channels == 1)
+	{
+		memcpy_s(pData, dataSize, pSrc, dataSize);
+	}
+	else {
+		stereo_t streamDst = (stereo_t)pData;
+		for (uint32 i = 0; i < len; i++)
+		{
+			streamDst[i][0] = streamDst[i][1] = pSrc[i];
+		}		
+	}
+}
+
 
 /**************************************************************************************************
 *

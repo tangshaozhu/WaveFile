@@ -9,6 +9,7 @@
 #include "iircoefs-lc50-44100.h"
 #include <string>
 #include <cstdio>
+#include "biphase_encode.h"
 
 #define TEST_FILE_PATH	//"F:/Documents/MFC/WaveFileDemo/Debug/"
 #define TEST_FILE_NAME	"output"
@@ -262,7 +263,7 @@ int ConvertAndTrim(int argc, char* argv[])
 	if (pWav->GetChannels() == 2) {
 		WaveFile* pWavTemp = new WaveFile(*pWav, CHANNEL_MONO_L);
 		delete pWav;
-		pWav =  pWavTemp;
+		pWav = pWavTemp;
 	}
 	size_t datalen = pWav->GetLastNonZero();
 	printf("%d / %d\n", datalen, pWav->GetChannelLen());
@@ -273,7 +274,25 @@ int ConvertAndTrim(int argc, char* argv[])
 	return 0;
 }
 
+#define __RETURN_IF_ARGS_LESSTHAN(argc, n) do {if ((argc) < (n)) {return -1;} } while(0)
+
+int GenBiphaseWave(int argc, char* argv[])
+{
+	__RETURN_IF_ARGS_LESSTHAN(argc, 2);
+	BYTE packet[3];
+	packet[0] = 1;
+	packet[1] = 0x35;
+	packet[2] = Checksum8(packet, 2);
+	size_t sample_len;
+	sample_t* pdata = AllocSamples(packet, 3, 44100, &sample_len);
+	WaveFile wav(1, 44100);
+	wav.ImportData(sample_len, pdata);
+	wav.WriteFile(DT_AUTO, argv[1]);
+	delete [] pdata;
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
-	return ConvertAndTrim(argc, argv);
+	return GenBiphaseWave(argc, argv);
 }

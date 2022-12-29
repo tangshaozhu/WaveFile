@@ -19,6 +19,7 @@
 
 #pragma once
 //#include <windows.h>
+#include "stdafx.h"
 #include "wav-types.h"
 
 #define	WF_SUCCESS 0
@@ -137,10 +138,10 @@ public:
 		return dataSize / channels / sizeof(sample_t);
 	}
 
-	void ImportData(size_t size, const sample_t* pSrc);
-	void ImportData(size_t chSize, const sample_t* pSrcL, const sample_t* pSrcR);
-	void ExportData(size_t size, sample_t* pDst);
-	void ExportData(size_t chSize, sample_t* pDstL, sample_t* pDstR);
+	void ImportData(size_t len, const sample_t* pSrc);
+	void ImportData(size_t chLen, const sample_t* pSrcL, const sample_t* pSrcR);
+	void ExportData(size_t len, sample_t* pDst);
+	void ExportData(size_t chLen, sample_t* pDstL, sample_t* pDstR);
 
 	/* 接管WavHeaderStd方法 */
 	virtual void PrintInfo(WavHeaderStd& head);		// 打印文件头信息
