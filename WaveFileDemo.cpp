@@ -294,5 +294,5 @@ int GenBiphaseWave(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
-	return GenBiphaseWave(argc, argv);
+	return OneKeyLowCut(argc, argv);
 }

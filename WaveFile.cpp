@@ -302,7 +302,7 @@ uint32 WaveFile::ReadFile(const char* path)
 				else {
 					pData = new sample_t[sampleNum];
 				}
-				dataSize = fileDataSize;
+				dataSize = newDataSize;
 
 				for (DWORD i = 0; i < sampleNum; ++i) {
 					pData[i] = (sample_t)(pFileData[i]) / (sample_t)0x7fffffff;
@@ -357,7 +357,7 @@ uint32 WaveFile::ReadFile(const char* path)
 				else {
 					pData = new sample_t[sampleNum];
 				}
-				dataSize = fileDataSize;
+				dataSize = newDataSize;
 
 				for (DWORD i = 0; i < sampleNum; ++i) {
 					pData[i] = (sample_t)(pFileData[i]);
@@ -374,9 +374,16 @@ uint32 WaveFile::ReadFile(const char* path)
 			}
 			goto CLOSE_FILE;
 		}
+		case STR_BEXT:
+			PRINT_TAG(readtag);
+			printf("BEXT Chunk, discard the data.\n");
+			fread(&readsize, sizeof(DWORD), 1, fp);
+			readsize = (readsize + 1) & 0xfffffffe;
+			fseek(fp, readsize, SEEK_CUR);
+			break;
 		default:
 			PRINT_TAG(readtag);
-			printf("Other Chunk, read chunk size and discard the data.\n");
+			printf("Other Chunk, discard the data.\n");
 			fread(&readsize, sizeof(DWORD), 1, fp);
 			fseek(fp, readsize, SEEK_CUR);
 			break;
